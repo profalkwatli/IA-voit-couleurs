@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorateur Couleur HSV pour OpenCV</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        code, pre {
+            font-family: 'Fira Code', monospace;
+        }
+        /* Custom range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            background: #334155;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 22px;
+            width: 22px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            border: 2px solid #0f172a;
+        }
+        /* Hue Bar Gradient specifically for OpenCV range [0, 180] */
+        .hue-gradient {
+            background: linear-gradient(to right, 
+                hsl(0, 100%, 50%), 
+                hsl(60, 100%, 50%), 
+                hsl(120, 100%, 50%), 
+                hsl(180, 100%, 50%), 
+                hsl(240, 100%, 50%), 
+                hsl(300, 100%, 50%), 
+                hsl(360, 100%, 50%)
+            );
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-slate-950 text-slate-100 p-4 sm:p-6">
+
+    <!-- Header Section -->
+    <header class="max-w-6xl mx-auto w-full mb-6 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center border-b border-slate-800 pb-4 gap-4">
+        <div>
+            <div class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/30 px-3 py-1 rounded-full text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                Developed by Prof. AL KWATLI D.M.A 
+                (Email: dr.al kwatli@gmail.com) 
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                Comment l'IA voit les couleurs ? <span class="text-amber-400">(Format HSV)</span>
+            </h1>
+        </div>
+        <p class="text-slate-400 text-xs sm:text-sm max-w-md text-right sm:text-left">
+            Contrairement aux humains (RVB), un ordinateur utilise l'espace <b>HSV</b> (Teinte, Saturation, Valeur) pour isoler facilement les couleurs sous différentes lumières.
+        </p>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+
+        <!-- LEFT PANEL: Quick Presets & AI Explanations (4 cols) -->
+        <section class="lg:col-span-4 flex flex-col gap-5">
+            
+            <!-- Quick Presets -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                    ⚡ Préréglages rapides pour TP
+                </h2>
+                <p class="text-xs text-slate-400 mb-4">Cliquez sur une couleur pour charger sa plage HSV standard :</p>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="applyPreset('yellow')" class="flex items-center gap-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-semibold text-xs sm:text-sm transition-all text-left">
+                        <span class="w-4 h-4 rounded-full bg-yellow-400 shadow-lg shadow-yellow-500/50"></span>
+                        <span>Jaune (TP)</span>
+                    </button>
+
+                    <button onclick="applyPreset('blue')" class="flex items-center gap-2 p-2.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 font-semibold text-xs sm:text-sm transition-all text-left">
+                        <span class="w-4 h-4 rounded-full bg-blue-500"></span>
+                        <span>Bleu</span>
+                    </button>
+
+                    <button onclick="applyPreset('red')" class="flex items-center gap-2 p-2.5 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-300 font-semibold text-xs sm:text-sm transition-all text-left">
+                        <span class="w-4 h-4 rounded-full bg-red-500"></span>
+                        <span>Rouge</span>
+                    </button>
+
+                    <button onclick="applyPreset('green')" class="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold text-xs sm:text-sm transition-all text-left">
+                        <span class="w-4 h-4 rounded-full bg-emerald-500"></span>
+                        <span>Vert</span>
+                    </button>
+
+                    <button onclick="applyPreset('white')" class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-500/30 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm transition-all text-left">
+                        <span class="w-4 h-4 rounded-full bg-white border border-slate-400"></span>
+                        <span>Blanc</span>
+                    </button>
+
+                    <button onclick="applyPreset('black')" class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-950 hover:bg-slate-900 text-slate-400 font-semibold text-xs sm:text-sm transition-all text-left">
+                        <span class="w-4 h-4 rounded-full bg-black border border-slate-700"></span>
+                        <span>Noir</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- HSV Explained for Students -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex-grow flex flex-col justify-between">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">
+                    🧠 Le dictionnaire HSV en OpenCV
+                </h2>
+                <div class="space-y-3 text-xs sm:text-sm text-slate-300">
+                    <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                        <span class="font-bold text-amber-400">H - Hue (Teinte) :</span> [0 à 180]<br>
+                        Désigne la couleur exacte (ex: 20-35 = Jaune, 100-130 = Bleu).
+                    </div>
+                    <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                        <span class="font-bold text-emerald-400">S - Saturation :</span> [0 à 255]<br>
+                        Pureté de la couleur (0 = gris/fade, 255 = couleur très vive).
+                    </div>
+                    <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                        <span class="font-bold text-sky-400">V - Value (Luminosité) :</span> [0 à 255]<br>
+                        Brillance de la couleur (0 = noir obscur, 255 = très éclairé).
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- RIGHT PANEL: Interactive Sliders + Code Output (8 cols) -->
+        <section class="lg:col-span-8 flex flex-col gap-6">
+
+            <!-- Interactive Sliders Box -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col gap-6">
+                
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white">Ajustement de la Plage HSV</h2>
+                        <p class="text-xs text-slate-400">Réglez les limites minimales et maximales pour isoler la couleur.</p>
+                    </div>
+                    <!-- Color Preview Circle & Name -->
+                    <div class="flex items-center gap-3 bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 w-full sm:w-auto justify-between sm:justify-start">
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase tracking-wider text-slate-500 block">Détecté :</span>
+                            <span id="detectedColorName" class="font-bold text-sm text-amber-400">Jaune</span>
+                        </div>
+                        <div id="colorPreviewBox" class="w-10 h-10 rounded-xl border-2 border-white/20 shadow-lg transition-all duration-200" style="background-color: #ffd700;"></div>
+                    </div>
+                </div>
+
+                <!-- SLIDERS CONTAINER -->
+                <div class="space-y-6">
+
+                    <!-- HUE SLIDERS -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs font-semibold">
+                            <span class="text-amber-400 flex items-center gap-1">🎨 HUE (Teinte : 0 à 180)</span>
+                            <span class="text-slate-400">Min: <b id="val-hmin" class="text-white">20</b> | Max: <b id="val-hmax" class="text-white">35</b></span>
+                        </div>
+                        <div class="hue-gradient p-1.5 rounded-lg mb-1 opacity-80"></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">H_min (Seuil bas)</label>
+                                <input type="range" id="hmin" min="0" max="180" value="20" oninput="updateSliders()">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">H_max (Seuil haut)</label>
+                                <input type="range" id="hmax" min="0" max="180" value="35" oninput="updateSliders()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SATURATION SLIDERS -->
+                    <div class="space-y-2 border-t border-slate-800/60 pt-4">
+                        <div class="flex justify-between text-xs font-semibold">
+                            <span class="text-emerald-400 flex items-center gap-1">💧 SATURATION (0 à 255)</span>
+                            <span class="text-slate-400">Min: <b id="val-smin" class="text-white">100</b> | Max: <b id="val-smax" class="text-white">255</b></span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">S_min (Intensité min)</label>
+                                <input type="range" id="smin" min="0" max="255" value="100" oninput="updateSliders()">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">S_max (Intensité max)</label>
+                                <input type="range" id="smax" min="0" max="255" value="255" oninput="updateSliders()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VALUE SLIDERS -->
+                    <div class="space-y-2 border-t border-slate-800/60 pt-4">
+                        <div class="flex justify-between text-xs font-semibold">
+                            <span class="text-sky-400 flex items-center gap-1">☀️ VALUE (Luminosité : 0 à 255)</span>
+                            <span class="text-slate-400">Min: <b id="val-vmin" class="text-white">100</b> | Max: <b id="val-vmax" class="text-white">255</b></span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">V_min (Lumière min)</label>
+                                <input type="range" id="vmin" min="0" max="255" value="100" oninput="updateSliders()">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">V_max (Lumière max)</label>
+                                <input type="range" id="vmax" min="0" max="255" value="255" oninput="updateSliders()">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CODE GENERATOR & COPY BOX -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col gap-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <span>🐍 Code Python à intégrer dans le TP</span>
+                    </h3>
+                    <button id="copyBtn" onclick="copyPythonCode()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-3 py-2 rounded-xl transition-all shadow-lg active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        <span>Copier le Code</span>
+                    </button>
+                </div>
+
+                <!-- Python Output Preview -->
+                <div class="relative bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-x-auto">
+                    <pre class="text-sm text-emerald-400 font-mono"><span class="text-slate-500"># STEP 4: Define HSV range for color detection</span>
+<span class="text-purple-400">import</span> numpy <span class="text-purple-400">as</span> np
+
+<span class="text-sky-300">lower_hsv</span> = np.array([<span id="code-hmin" class="text-amber-300">20</span>, <span id="code-smin" class="text-amber-300">100</span>, <span id="code-vmin" class="text-amber-300">100</span>])
+<span class="text-sky-300">upper_hsv</span> = np.array([<span id="code-hmax" class="text-amber-300">35</span>, <span id="code-smax" class="text-amber-300">255</span>, <span id="code-vmax" class="text-amber-300">255</span>])</pre>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-emerald-500 text-slate-950 px-4 py-3 rounded-xl font-bold text-sm shadow-2xl transition-all duration-300 opacity-0 translate-y-10 pointer-events-none flex items-center gap-2">
+        <span>✅ Code copié dans le presse-papier ! Vous pouvez le coller dans votre TP.</span>
+    </div>
+
+    <!-- JS Logic -->
+    <script>
+        // Preset configurations for OpenCV HSV
+        const presets = {
+            yellow: { hmin: 20, hmax: 35, smin: 100, smax: 255, vmin: 100, vmax: 255 },
+            blue:   { hmin: 100, hmax: 130, smin: 100, smax: 255, vmin: 100, vmax: 255 },
+            red:    { hmin: 0, hmax: 10, smin: 120, smax: 255, vmin: 100, vmax: 255 },
+            green:  { hmin: 40, hmax: 85, smin: 80, smax: 255, vmin: 80, vmax: 255 },
+            white:  { hmin: 0, hmax: 180, smin: 0, smax: 30, vmin: 200, vmax: 255 },
+            black:  { hmin: 0, hmax: 180, smin: 0, smax: 255, vmin: 0, vmax: 50 }
+        };
+
+        function updateSliders() {
+            // Get slider elements
+            let hmin = parseInt(document.getElementById('hmin').value);
+            let hmax = parseInt(document.getElementById('hmax').value);
+            let smin = parseInt(document.getElementById('smin').value);
+            let smax = parseInt(document.getElementById('smax').value);
+            let vmin = parseInt(document.getElementById('vmin').value);
+            let vmax = parseInt(document.getElementById('vmax').value);
+
+            // Ensure min doesn't exceed max
+            if (hmin > hmax) { hmax = hmin; document.getElementById('hmax').value = hmax; }
+            if (smin > smax) { smax = smin; document.getElementById('smax').value = smax; }
+            if (vmin > vmax) { vmax = vmin; document.getElementById('vmax').value = vmax; }
+
+            // Update numerical text displays
+            document.getElementById('val-hmin').innerText = hmin;
+            document.getElementById('val-hmax').innerText = hmax;
+            document.getElementById('val-smin').innerText = smin;
+            document.getElementById('val-smax').innerText = smax;
+            document.getElementById('val-vmin').innerText = vmin;
+            document.getElementById('val-vmax').innerText = vmax;
+
+            // Update Python Code output
+            document.getElementById('code-hmin').innerText = hmin;
+            document.getElementById('code-hmax').innerText = hmax;
+            document.getElementById('code-smin').innerText = smin;
+            document.getElementById('code-smax').innerText = smax;
+            document.getElementById('code-vmin').innerText = vmin;
+            document.getElementById('code-vmax').innerText = vmax;
+
+            // Convert average HSV values to CSS HSL for live visual preview
+            let avgH = Math.round((hmin + hmax) / 2);
+            let avgS = Math.round(((smin + smax) / 2) / 2.55); // Convert 0-255 to 0-100%
+            let avgV = Math.round(((vmin + vmax) / 2) / 2.55); // Convert 0-255 to 0-100%
+
+            // OpenCV Hue scale 0-180 -> Standard Hue scale 0-360
+            let cssHue = avgH * 2; 
+
+            // Convert HSV/HSB to CSS HSL format for display
+            let cssLightness = (avgV / 100) * (1 - (avgS / 100) / 2) * 100;
+            let cssSat = (cssLightness === 0 || cssLightness === 100) ? 0 : ((avgV - cssLightness) / Math.min(cssLightness, 100 - cssLightness)) * 100;
+
+            const previewBox = document.getElementById('colorPreviewBox');
+            previewBox.style.backgroundColor = `hsl(${cssHue}, ${cssSat}%, ${cssLightness}%)`;
+
+            // Detect color category name based on Hue/Sat/Val
+            document.getElementById('detectedColorName').innerText = identifyColorName(avgH, avgS, avgV);
+        }
+
+        function identifyColorName(h, s, v) {
+            if (v < 20) return "Noir / Très Sombre";
+            if (s < 15 && v > 75) return "Blanc / Clair";
+            if (s < 20) return "Gris";
+
+            if (h >= 0 && h <= 10) return "Rouge";
+            if (h > 10 && h <= 20) return "Orange";
+            if (h > 20 && h <= 35) return "Jaune ✨";
+            if (h > 35 && h <= 85) return "Vert";
+            if (h > 85 && h <= 135) return "Bleu";
+            if (h > 135 && h <= 165) return "Violet / Rose";
+            if (h > 165 && h <= 180) return "Rouge";
+            return "Couleur personnalisée";
+        }
+
+        function applyPreset(colorKey) {
+            const p = presets[colorKey];
+            if (!p) return;
+
+            document.getElementById('hmin').value = p.hmin;
+            document.getElementById('hmax').value = p.hmax;
+            document.getElementById('smin').value = p.smin;
+            document.getElementById('smax').value = p.smax;
+            document.getElementById('vmin').value = p.vmin;
+            document.getElementById('vmax').value = p.vmax;
+
+            updateSliders();
+        }
+
+        function copyPythonCode() {
+            const hmin = document.getElementById('hmin').value;
+            const hmax = document.getElementById('hmax').value;
+            const smin = document.getElementById('smin').value;
+            const smax = document.getElementById('smax').value;
+            const vmin = document.getElementById('vmin').value;
+            const vmax = document.getElementById('vmax').value;
+
+            const codeText = `# STEP 4: Define HSV range for yellow color
+lower_hsv = np.array([${hmin}, ${smin}, ${vmin}])
+upper_hsv = np.array([${hmax}, ${smax}, ${vmax}])`;
+
+            // Copy logic compatible with iframe/web execution
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = codeText;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            // Trigger Toast Notification
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            updateSliders();
+        };
+    </script>
+</body>
+</html>
